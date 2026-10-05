@@ -1,0 +1,1 @@
+docker run -d --name flashexchange-redis -p 6379:6379 redis:7-alpine // Khởi chạy redis qua docker

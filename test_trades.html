@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>FlashExchange - Bảng Khớp Lệnh Realtime</title>
+    <!-- Nhúng thư viện SockJS và STOMP qua CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+</head>
+<body style="font-family: monospace; padding: 20px; background: #1e1e1e; color: #fff;">
+    <h2>🟢 FlashExchange - Live Trade Stream</h2>
+    <div id="status" style="color: #ff9800;">Đang kết nối WebSocket...</div>
+    <hr style="border-color: #444;">
+    <h3>Danh sách giao dịch khớp lệnh:</h3>
+    <ul id="trades" style="list-style: none; padding: 0;"></ul>
+
+    <script>
+        // 1. Kết nối vào endpoint /ws của Spring Boot
+        const socket = new SockJS('http://localhost:8080/ws');
+        const stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function (frame) {
+            document.getElementById('status').innerText = '✅ Đã kết nối thành công! Đang hóng giao dịch...';
+            document.getElementById('status').style.color = '#4caf50';
+
+            // 2. Đăng ký (Subscribe) kênh /topic/trades
+            stompClient.subscribe('/topic/trades', function (message) {
+                const trade = JSON.parse(message.body);
+                const li = document.createElement('li');
+                li.style.padding = '8px';
+                li.style.borderBottom = '1px solid #333';
+                li.innerHTML = `⚡ <b>KHỚP LỆNH:</b> Trade ID: <span style="color:#00e676">${trade.tradeId}</span> | Symbol: ${trade.symbol} | Giá: <span style="color:#ffeb3b">${trade.price}$</span> | Khối lượng: <span style="color:#00e5ff">${trade.quantity}</span> | Maker: ${trade.makerOrderId} | Taker: ${trade.takerOrderId}`;
+                document.getElementById('trades').prepend(li);
+            });
+        }, function (error) {
+            document.getElementById('status').innerText = '❌ Lỗi kết nối: ' + error;
+            document.getElementById('status').style.color = '#f44336';
+        });
+    </script>
+</body>
+</html>
