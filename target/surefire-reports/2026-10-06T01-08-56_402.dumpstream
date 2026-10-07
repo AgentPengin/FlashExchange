@@ -1,0 +1,5 @@
+# Created at 2026-10-06T01:08:56.524
+Boot Manifest-JAR contains absolute paths in classpath 'D:\Study\Project\FlashExchange\target\test-classes'
+Hint: <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+'other' has different root
+

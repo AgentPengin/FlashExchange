@@ -17,7 +17,7 @@ public class FlashSaleService {
         this.redisTemplate = redisTemplate;
         
         this.deductScript = new DefaultRedisScript<>();
-        this.deductScript.setLocation(new ClassPathResource("scirpts/stock_decrement.lua"));
+        this.deductScript.setLocation(new ClassPathResource("scripts/stock_decrement.lua"));
         this.deductScript.setResultType(Long.class);
     }
 
