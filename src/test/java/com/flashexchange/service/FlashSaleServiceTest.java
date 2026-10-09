@@ -9,14 +9,24 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.List;
+import java.util.UUID;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import com.flashexchange.dto.DeductResult;
+
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 public class FlashSaleServiceTest {
-    
+
+    @Autowired
+    private StringRedisTemplate redisTemplate;
+
     @Autowired 
     private FlashSaleService flashSaleService;
+    
 
     @Test
     @DisplayName("Stress test: 1000 người tranh mua 100 sản phẩm - không được bán âm")
@@ -40,8 +50,8 @@ public class FlashSaleServiceTest {
             executor.submit(() -> {
                 try {
                     startGun.await();
-                    boolean success = flashSaleService.tryDeductStock(itemKey, 1);
-                    if (success) {
+                    DeductResult success = flashSaleService.tryDeductStock(itemKey, 1);
+                    if (success.success()) {
                         successCount.incrementAndGet();
                     } else {
                         failCount.incrementAndGet();
@@ -87,8 +97,8 @@ public class FlashSaleServiceTest {
         flashSaleService.initStock(itemKey, 1);
         assertThat(flashSaleService.getStock(itemKey)).isEqualTo(1);
 
-        boolean success = flashSaleService.tryDeductStock(itemKey, 1);
-        assertThat(success).isTrue();
+        DeductResult success = flashSaleService.tryDeductStock(itemKey, 1);
+        assertThat(success.success()).isTrue();
 
         assertThat(flashSaleService.getStock(itemKey)).isEqualTo(0);
         System.out.println("Khách đã mua thành công, kho hiện tại: " + flashSaleService.getStock(itemKey));
@@ -102,4 +112,97 @@ public class FlashSaleServiceTest {
         assertThat(restoredStock).isEqualTo(1);
     }
 
+    @Test
+    @DisplayName("The ultimate stress test: Buying -> Dont't pay -> Rollback -> Buy again")
+    void testComprehensiveFlashsaleLifecycle() throws InterruptedException {
+        String itemKey = "flashsale:stock:CONCERT_VIP";
+        int initialStock = 50;
+        int wave1Users = 500;
+
+        flashSaleService.initStock(itemKey, initialStock);
+        assertThat(flashSaleService.getStock(itemKey)).isEqualTo(initialStock);
+
+        ExecutorService pool = Executors.newFixedThreadPool(50);
+        CountDownLatch startGun = new CountDownLatch(1);
+        CountDownLatch wave1Done = new CountDownLatch(wave1Users);
+
+        List<String> successfulOrders = new CopyOnWriteArrayList<>();
+        AtomicInteger wave1Failed = new AtomicInteger(0);
+
+        for (int i = 0;i < wave1Users;i++) {
+            pool.submit(() -> {
+                try {
+                    startGun.await();
+                    String orderId = "ORD-" + UUID.randomUUID().toString().substring(0, 8);
+                    String userId = "user-" + UUID.randomUUID().toString().substring(0, 8);
+
+                    DeductResult success = flashSaleService.tryDeductStock(itemKey, 1);
+                    if (success.success()) {
+                        successfulOrders.add(success.orderId());
+                        redisTemplate.opsForValue().set("order:status:" + orderId, "UNPAID");
+                    } else {
+                        wave1Failed.incrementAndGet();
+                    }
+                } catch(Exception e) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    wave1Done.countDown();
+                }
+            });
+        }
+
+        startGun.countDown();
+        wave1Done.await();
+
+        assertThat(successfulOrders).hasSize(50);
+        assertThat(wave1Failed.get()).isEqualTo(wave1Users - initialStock);
+        assertThat(flashSaleService.getStock(itemKey)).isEqualTo(0);
+        System.out.println("Wave 1 completed: Successful orders = " + successfulOrders.size() + ", Failed orders = " + wave1Failed.get());
+        
+        successfulOrders.forEach(orderId -> {
+            String status = flashSaleService.getOrderStatus(orderId);
+            assertThat(status).isEqualTo("UNPAID");
+        });
+
+        for (int i = 0;i < 30;i++) {
+            flashSaleService.payOrder(successfulOrders.get(i));
+        }
+        System.out.println("30 orders paid, 20 orders unpaid. Waiting for 12s to trigger rollback...");
+        Thread.sleep(12000);
+
+        long restoredStock = flashSaleService.getStock(itemKey);
+        System.out.println("After rollback, stock = " + restoredStock);
+        assertThat(restoredStock).isEqualTo(20);
+
+        CountDownLatch wave3Gun = new CountDownLatch(1);
+        CountDownLatch wave3Done = new CountDownLatch(100);
+        AtomicInteger wave3Success = new AtomicInteger(0);
+
+        for (int i = 0;i < 100;i++) {
+            pool.submit(() -> {
+                try {
+                    wave3Gun.await();
+                
+                    if (flashSaleService.tryDeductStock(itemKey, 1).success()) {
+                        wave3Success.incrementAndGet();
+                    }
+                } catch (Exception e) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    wave3Done.countDown();
+                }
+            });
+        }
+
+        wave3Gun.countDown();
+        wave3Done.await();
+        pool.shutdown();
+
+        assertThat(wave3Success.get()).isEqualTo(20);
+        assertThat(flashSaleService.getStock(itemKey)).isEqualTo(0);
+
+        System.out.println("Wave 3 completed: Successful orders = " + wave3Success.get() + ", Remaining stock = " + flashSaleService.getStock(itemKey));
+        System.out.println("Comprehensive flash sale lifecycle test completed successfully.");
+
+    }   
 }

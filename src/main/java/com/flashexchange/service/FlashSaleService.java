@@ -8,6 +8,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import com.flashexchange.dto.FlashSaleOrderMessage;
 import com.flashexchange.config.RabbitMQConfig;
 import java.util.UUID;
+import com.flashexchange.dto.DeductResult;
 
 import java.util.Collections;
 
@@ -30,15 +31,15 @@ public class FlashSaleService {
         redisTemplate.opsForValue().set(itemKey, String.valueOf(stock));
     }
 
-    public boolean tryDeductStock(String itemKey, long quantity) {
+    public DeductResult tryDeductStock(String itemKey, long quantity) {
         Long result = redisTemplate.execute(
             deductScript,
             Collections.singletonList(itemKey),
             String.valueOf(quantity)
         );
+        String orderId = "ORD-" + UUID.randomUUID().toString().substring(0, 8);
         if (result != null && result == 1L) {
             // Gửi thông điệp đến RabbitMQ để xử lý đơn hàng
-            String orderId = "FS- " + UUID.randomUUID().toString().substring(0, 8);
             String userId = "user-" + UUID.randomUUID().toString().substring(0, 4);
             redisTemplate.opsForValue().set("order:status:" + orderId, "UNPAID");
             FlashSaleOrderMessage message = new FlashSaleOrderMessage(
@@ -56,9 +57,10 @@ public class FlashSaleService {
             );
         }
 
-        return result != null && result == 1L;
+        return new DeductResult(result != null && result == 1L, orderId);
     } 
     public void payOrder(String orderId) {
+        System.out.println("[TICK]: Order " + orderId + " has been paid.");
         redisTemplate.opsForValue().set("order:status:" + orderId, "PAID");
     }
     public String getOrderStatus(String orderId) {

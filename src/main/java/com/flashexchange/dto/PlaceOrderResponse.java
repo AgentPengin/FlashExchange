@@ -16,5 +16,4 @@ public record PlaceOrderResponse(
     OrderStatus status,
     long remainingQuantity,
     List<Trade> executedTrades
-) {
-}
+) {}

@@ -13,7 +13,7 @@ public class FlashSaleOrderConsumer {
     @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME)
     public void handleOrder(FlashSaleOrderMessage orderMessage) {
         // Xử lý đơn hàng tại đây
-        System.out.println("[WORKER-DB] Đã nhận đơn hàng từ Queue: "
+        System.out.println("[WORKER-DB] Received from queue: "
             + orderMessage.orderId() 
             + " | User: " + orderMessage.userId()
             + " | Item: " + orderMessage.itemKey()
@@ -34,11 +34,11 @@ public class FlashSaleOrderConsumer {
 
             Long newStock = redisTemplate.opsForValue().increment(message.itemKey(), message.quantity());
             
-            System.out.println("[TIMEOUT-WORKER] Đơn hàng " + message.orderId() 
-                    + " quá hạn 10s chưa thanh toán -> ĐÃ HOÀN LẠI " + message.quantity() 
-                    + " SẢN PHẨM VÀO KHO! Tồn kho hiện tại: " + newStock);
+            System.out.println("[TIMEOUT-WORKER] Order " + message.orderId() 
+                    + " 10s not paid -> RETURNED " + message.quantity() 
+                    + " product returned: " + newStock);
         } else {
-            System.out.println("[TIMEOUT-WORKER] Đơn hàng " + message.orderId() + " đã thanh toán.");
+            System.out.println("[TIMEOUT-WORKER] Order " + message.orderId() + " is purchased.");
         }
     }
 }
