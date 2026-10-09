@@ -1,6 +1,9 @@
+D:\Study\Project\FlashExchange\src\main\java\com\flashexchange\config\RabbitMQConfig.java
 D:\Study\Project\FlashExchange\src\main\java\com\flashexchange\config\WebSocketConfig.java
+D:\Study\Project\FlashExchange\src\main\java\com\flashexchange\consumer\FlashSaleOrderConsumer.java
 D:\Study\Project\FlashExchange\src\main\java\com\flashexchange\controller\OrderController.java
 D:\Study\Project\FlashExchange\src\main\java\com\flashexchange\dto\CreateOrderRequest.java
+D:\Study\Project\FlashExchange\src\main\java\com\flashexchange\dto\FlashSaleOrderMessage.java
 D:\Study\Project\FlashExchange\src\main\java\com\flashexchange\dto\OrderBookDepthResponse.java
 D:\Study\Project\FlashExchange\src\main\java\com\flashexchange\dto\PlaceOrderResponse.java
 D:\Study\Project\FlashExchange\src\main\java\com\flashexchange\engine\OrderBook.java

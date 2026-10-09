@@ -77,4 +77,29 @@ public class FlashSaleServiceTest {
         assertThat(failCount.get()).isEqualTo(totalRequests - initialStock);
         assertThat(remainingStock).isEqualTo(0);
     }
+
+
+    @Test
+    @DisplayName("Test timeout: Quá 10s không thanh toán -> Tự động hoàn lại sản phẩm")
+    void testOrderTimeout_RollbackStock() throws InterruptedException {
+        String itemKey = "flashsale:stock:IPHONE_TIMEOUT";
+
+        flashSaleService.initStock(itemKey, 1);
+        assertThat(flashSaleService.getStock(itemKey)).isEqualTo(1);
+
+        boolean success = flashSaleService.tryDeductStock(itemKey, 1);
+        assertThat(success).isTrue();
+
+        assertThat(flashSaleService.getStock(itemKey)).isEqualTo(0);
+        System.out.println("Khách đã mua thành công, kho hiện tại: " + flashSaleService.getStock(itemKey));
+
+        System.out.println("Đợi 12s để kiểm tra timeout...");
+        Thread.sleep(12000);
+
+        long restoredStock = flashSaleService.getStock(itemKey);
+        System.out.println("Sau 12s, kho hiện tại: " + restoredStock);
+
+        assertThat(restoredStock).isEqualTo(1);
+    }
+
 }
