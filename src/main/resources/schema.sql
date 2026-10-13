@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS wallets (
+    user_id VARCHAR(50) PRIMARY KEY,
+    balance BIGINT NOT NULL CHECK (balance >= 0) 
+);
+
+CREATE TABLE IF NOT EXISTS orders (
+    order_id VARCHAR(50) PRIMARY KEY,
+    user_id VARCHAR(50) NOT NULL,
+    item_key VARCHAR(100) NOT NULL,
+    quantity BIGINT NOT NULL,
+    amount BIGINT NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS ledger_entries (
+    id BIGSERIAL PRIMARY KEY,
+    order_id VARCHAR(50) NOT NULL,
+    user_id VARCHAR(50) NOT NULL,
+    amount BIGINT NOT NULL,
+    balance_after BIGINT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

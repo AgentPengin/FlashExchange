@@ -1,4 +1,5 @@
 D:\Study\Project\FlashExchange\src\main\java\com\flashexchange\config\RabbitMQConfig.java
+D:\Study\Project\FlashExchange\src\main\java\com\flashexchange\config\RateLimitFilter.java
 D:\Study\Project\FlashExchange\src\main\java\com\flashexchange\config\WebSocketConfig.java
 D:\Study\Project\FlashExchange\src\main\java\com\flashexchange\consumer\FlashSaleOrderConsumer.java
 D:\Study\Project\FlashExchange\src\main\java\com\flashexchange\controller\OrderController.java
@@ -16,4 +17,5 @@ D:\Study\Project\FlashExchange\src\main\java\com\flashexchange\model\OrderStatus
 D:\Study\Project\FlashExchange\src\main\java\com\flashexchange\model\OrderType.java
 D:\Study\Project\FlashExchange\src\main\java\com\flashexchange\model\Trade.java
 D:\Study\Project\FlashExchange\src\main\java\com\flashexchange\service\FlashSaleService.java
+D:\Study\Project\FlashExchange\src\main\java\com\flashexchange\service\OrderProcessingService.java
 D:\Study\Project\FlashExchange\src\main\java\com\flashexchange\service\RateLimiterService.java
