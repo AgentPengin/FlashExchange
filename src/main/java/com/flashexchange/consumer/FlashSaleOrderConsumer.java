@@ -2,13 +2,21 @@ package com.flashexchange.consumer;
 
 import com.flashexchange.config.RabbitMQConfig;
 import com.flashexchange.dto.FlashSaleOrderMessage;
+import com.flashexchange.service.OrderProcessingService;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
+
 @Component 
 public class FlashSaleOrderConsumer {
+
+    @Autowired 
+    private OrderProcessingService orderProcessingService;
+
+    @Autowired 
+    private StringRedisTemplate redisTemplate;
 
     @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME)
     public void handleOrder(FlashSaleOrderMessage orderMessage) {
@@ -20,9 +28,19 @@ public class FlashSaleOrderConsumer {
             + " | Quantity: " + orderMessage.quantity()
             + " | Timestamp: " + orderMessage.timestamp()
         );
+        try {
+
+            long itemPrice = 10L;
+            boolean processed = orderProcessingService.processOrder(orderMessage, itemPrice);
+        
+            if (processed) {
+                redisTemplate.opsForValue().set("order:status:" + orderMessage.orderId(), "PAID");
+                System.out.println("[WORKER-DB] Order " + orderMessage.orderId() + " processed successfully.");
+            }
+        } catch (Exception e) {
+            System.err.println("[WORKER-DB] Error processing order " + orderMessage.orderId() + ": " + e.getMessage());
+        }
     }
-    @Autowired
-    private StringRedisTemplate redisTemplate;
     
     @RabbitListener(queues = RabbitMQConfig.CANCEL_QUEUE_NAME)
     public void handleOrderCancellation(FlashSaleOrderMessage message) {

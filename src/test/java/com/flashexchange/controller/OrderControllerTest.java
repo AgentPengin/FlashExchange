@@ -16,10 +16,6 @@ import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/**
- * Bài kiểm tra tích hợp cho Tầng Web (REST Controller).
- * MockMvc giúp em giả lập việc gửi HTTP Request như người dùng thật mà không cần bật server.
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 class OrderControllerTest {

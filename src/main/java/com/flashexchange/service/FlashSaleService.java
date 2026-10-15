@@ -32,6 +32,11 @@ public class FlashSaleService {
     }
 
     public DeductResult tryDeductStock(String itemKey, long quantity) {
+        String randomUser = "user-" + UUID.randomUUID().toString().substring(0, 4);
+        return tryDeductStock(randomUser, itemKey, quantity);
+    }
+
+    public DeductResult tryDeductStock(String userId, String itemKey, long quantity) {
         Long result = redisTemplate.execute(
             deductScript,
             Collections.singletonList(itemKey),
@@ -40,7 +45,6 @@ public class FlashSaleService {
         String orderId = "ORD-" + UUID.randomUUID().toString().substring(0, 8);
         if (result != null && result == 1L) {
             // Gửi thông điệp đến RabbitMQ để xử lý đơn hàng
-            String userId = "user-" + UUID.randomUUID().toString().substring(0, 4);
             redisTemplate.opsForValue().set("order:status:" + orderId, "UNPAID");
             FlashSaleOrderMessage message = new FlashSaleOrderMessage(
                 orderId, userId, itemKey, quantity, System.currentTimeMillis()
