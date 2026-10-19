@@ -2,28 +2,29 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 
 export const options = {
-    stages: [
-        { duration: '5s', target: 20 }, 
-        { duration: '20s', target: 100 }, 
-        { duration: '5s', target: 0 },   
-    ],
+  stages: [
+    { duration: '5s', target: 20 },   // Warm-up stage: Ramp up to 20 virtual users
+    { duration: '20s', target: 100 }, // High-concurrency burst: 100 concurrent VUs
+    { duration: '5s', target: 0 },    // Ramp-down stage: Scale down to 0
+  ],
 };
 
 export default function () {
-    const userId = `user-${__VU}}`;
-    const params = {
-        headers: {
-            'Content-Type': 'application/json',
-            'X-User-Id': userId,
-        },
-    };
-    
-    const res = http.post('http://host.docker.internal:8080/api/v1/flashsale/buy?itemKey=FLASH_PASS', null, params);
+  const userId = `user-${__VU}`;
+  const params = {
+    headers: {
+      'Content-Type': 'application/json',
+      'X-User-Id': userId,
+    },
+  };
 
-    check(res, {
-        'Valid Status (201, 429, 410)': (r) =>  [201, 429, 410].includes(r.status),
-    });
+  // Dispatch atomic purchase request to Flash Sale API
+  const res = http.post('http://host.docker.internal:8080/api/v1/flashsale/buy?itemKey=FLASH_PASS', null, params);
 
-    sleep(0.05);
-};
+  // Validate expected status codes: 201 (Purchased), 429 (Rate Limited), 410 (Sold Out)
+  check(res, {
+    'Valid Status (201, 429, 410)': (r) => [201, 429, 410].includes(r.status),
+  });
 
+  sleep(0.05); // 50ms pacing between requests per VU
+}
