@@ -1,4 +1,6 @@
+com\flashexchange\service\FlashSaleServiceTest.class
 com\flashexchange\service\OrderProcessingServiceTest.class
+com\flashexchange\EndToEndIntegrationTest.class
 com\flashexchange\engine\OrderBookTest.class
 com\flashexchange\service\RateLimiterServiceTest.class
 com\flashexchange\config\RateLimitFilterTest.class

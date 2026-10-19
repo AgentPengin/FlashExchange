@@ -1,1 +1,3 @@
 docker run -d --name flashexchange-redis -p 6379:6379 redis:7-alpine // Khởi chạy redis qua docker
+
+docker run --rm -i -v "${PWD}/monitoring:/scripts" grafana/k6 run /scripts/load_test_flashsale.js // chạy test k6
